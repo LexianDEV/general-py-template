@@ -35,3 +35,13 @@ jobs:
         with:
           name: dev-build
           path: dist
+
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/Application.exe
+          prerelease: ${{ startsWith(github.ref_name, 'b') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
