@@ -1,4 +1,5 @@
-name: Package Application with PyInstaller for Linux
+name: Build and Release for All Platforms
+
 on:
   push:
     branches:
@@ -9,7 +10,39 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            executable_name: Application
+            asset_name: Application-linux-x86_64
+          
+          # Windows x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+            executable_name: Application.exe
+            asset_name: Application-windows-x86_64.exe
+          
+          # macOS Intel x86_64
+          - os: macos-13
+            platform: macos
+            arch: x86_64
+            executable_name: Application
+            asset_name: Application-macos-x86_64
+          
+          # macOS Apple Silicon ARM64
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+            executable_name: Application
+            asset_name: Application-macos-arm64
+
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
@@ -19,14 +52,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install PyInstaller dependencies (Linux)
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential
@@ -35,15 +69,27 @@ jobs:
         run: |
           pyinstaller build.spec
 
-      - name: Upload debug build artifact
+      - name: Rename executable for release
+        shell: bash
+        run: |
+          cd dist
+          if [ -f "${{ matrix.executable_name }}" ]; then
+            mv "${{ matrix.executable_name }}" "${{ matrix.asset_name }}"
+          else
+            echo "Warning: Expected executable ${{ matrix.executable_name }} not found"
+            ls -la
+          fi
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dev-build
-          path: dist
+          name: ${{ matrix.asset_name }}
+          path: dist/${{ matrix.asset_name }}
 
       - name: Extract changelog entry
         if: startsWith(github.ref, 'refs/tags/')
         id: changelog
+        shell: bash
         run: |
           version=${GITHUB_REF_NAME#v}
           echo "Extracting changelog for version $version"
@@ -67,7 +113,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/Application
+          files: dist/${{ matrix.asset_name }}
           prerelease: ${{ startsWith(github.ref_name, 'b') }}
           body: ${{ steps.changelog.outputs.content }}
         env:
