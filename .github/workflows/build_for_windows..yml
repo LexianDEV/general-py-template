@@ -36,12 +36,35 @@ jobs:
           name: dev-build
           path: dist
 
+      - name: Extract changelog entry
+        if: startsWith(github.ref, 'refs/tags/')
+        id: changelog
+        shell: bash
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          echo "Extracting changelog for version $version"
+          
+          # Extract the changelog section for this version
+          if grep -q "## \[$version\]" CHANGELOG.md; then
+            # Extract content between this version and the next version heading or links section
+            changelog_content=$(awk "/## \[$version\]/{flag=1; next} /## \[|^\[.*\]:/{flag=0} flag" CHANGELOG.md | sed '/^$/d')
+            echo "Changelog content found for version $version"
+          else
+            echo "No changelog entry found for version $version, using default message"
+            changelog_content="Release $version - See CHANGELOG.md for details"
+          fi
+          
+          # Store in output for use in release step
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog_content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: dist/Application.exe
           prerelease: ${{ startsWith(github.ref_name, 'b') }}
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
