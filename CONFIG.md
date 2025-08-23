@@ -4,9 +4,9 @@ This Python template includes a Laravel-inspired configuration system that allow
 
 ## Features
 
-- **Multiple Config Files**: Organize your configuration into separate Python files (e.g., `app.py`, `database.py`, `mail.py`)
+- **Multiple Config Files**: Organize your configuration into separate Python files (e.g., `app.py`)
 - **Environment Overrides**: Use `.env` file or environment variables to override config values
-- **Dot Notation Access**: Access nested configuration using dot notation (e.g., `database.connections.mysql.host`)
+- **Dot Notation Access**: Access nested configuration using dot notation (e.g., `app.name`, `app.logging.level`)
 - **Runtime Changes**: Modify configuration values at runtime for testing or dynamic behavior
 - **Helper Functions**: Easy-to-use helper functions for common config operations
 
@@ -19,7 +19,7 @@ import helpers
 
 # Get configuration values using dot notation
 app_name = helpers.get_config('app.name', 'Default App')
-db_host = helpers.get_config('database.connections.mysql.host', 'localhost')
+response_number = helpers.get_config('app.response_number', 42)
 debug_mode = helpers.get_config('app.debug', False)
 
 # Check if a configuration exists
@@ -35,13 +35,15 @@ all_app_config = helpers.get_all_config('app')
 Environment variables take precedence over config files. Use uppercase and underscores:
 
 - `app.name` → `APP_NAME`
-- `database.connections.mysql.host` → `DATABASE_CONNECTIONS_MYSQL_HOST`
+- `app.response_number` → `APP_RESPONSE_NUMBER`
+- `app.logging.level` → `APP_LOGGING_LEVEL`
 
 Example `.env` file:
 ```bash
 APP_NAME=My Custom App
 APP_DEBUG=true
-DATABASE_HOST=production-db.example.com
+APP_RESPONSE_NUMBER=100
+APP_MESSAGE=Hello from the environment!
 ```
 
 ### Runtime Configuration Changes
@@ -68,30 +70,21 @@ Example `config/services.py`:
 # External service configurations
 api_key = "your-api-key-here"
 
-payment = {
-    "stripe": {
-        "public_key": "",
-        "secret_key": "",
-        "webhook_secret": ""
-    },
-    "paypal": {
-        "client_id": "",
-        "client_secret": "",
-        "sandbox": True
-    }
+external_api = {
+    "base_url": "https://api.example.com",
+    "timeout": 30,
+    "retry_attempts": 3
 }
 
 cache = {
-    "driver": "redis",
+    "enabled": True,
     "ttl": 3600
 }
 ```
 
 ### Existing Config Files
 
-- **`app.py`**: Application-wide settings (name, version, debug mode, etc.)
-- **`database.py`**: Database connections and settings
-- **`mail.py`**: Email/mail configuration
+- **`app.py`**: Application-wide settings (name, version, debug mode, response number, etc.)
 
 ## Advanced Usage
 

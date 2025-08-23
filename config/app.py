@@ -14,18 +14,11 @@ env = "development"
 # Debug mode
 debug = True
 
-# Application URL
-url = "http://localhost:8000"
+# Default response number that the app returns
+response_number = 42
 
-# Timezone
-timezone = "UTC"
-
-# Locale settings
-locale = {
-    "default": "en",
-    "fallback": "en",
-    "supported": ["en", "es", "fr"]
-}
+# Message to display
+message = "Hello from the General Python Template!"
 
 # Logging configuration
 logging = {
