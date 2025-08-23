@@ -3,6 +3,40 @@ This is a template for a **GENERAL APPLICATION** built in Python.
 
 It was developed by LexianDEV
 
+## Features
+
+- **Laravel-like Configuration System**: Manage application settings through Python files with environment variable overrides
+- **Helper Functions**: Utility functions for common operations (time, config management)
+- **Modular Structure**: Organized directory structure for configs, modules, data, and logs
+- **PyInstaller Ready**: Pre-configured for building standalone executables
+
+## Configuration System
+
+This template includes a powerful configuration system inspired by Laravel. You can:
+
+- Define configuration in Python files (`config/app.py`, `config/database.py`, etc.)
+- Override settings with environment variables or `.env` file
+- Access configuration using dot notation: `helpers.get_config('app.name')`
+- Modify configuration at runtime for testing
+
+See [CONFIG.md](CONFIG.md) for detailed documentation.
+
+## Quick Start
+
+```python
+import helpers
+
+# Get current time
+print(f"Current time: {helpers.time()}")
+
+# Get configuration
+app_name = helpers.get_config('app.name', 'My App')
+debug_mode = helpers.get_config('app.debug', False)
+
+# Use environment variables
+api_key = helpers.env('API_KEY', 'default-key')
+```
+
 ## Changelog Management
 
 This project uses the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format for documenting changes. The changelog is maintained in the `CHANGELOG.md` file and **must be edited manually** when making changes to the project.
