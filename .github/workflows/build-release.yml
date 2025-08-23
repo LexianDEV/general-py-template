@@ -19,21 +19,21 @@ jobs:
             arch: x86_64
             executable_name: Application
             asset_name: Application-linux-x86_64
-          
+
           # Windows x86_64
           - os: windows-latest
             platform: windows
             arch: x86_64
             executable_name: Application.exe
             asset_name: Application-windows-x86_64.exe
-          
+
           # macOS Intel x86_64
           - os: macos-13
             platform: macos
             arch: x86_64
             executable_name: Application
             asset_name: Application-macos-x86_64
-          
+
           # macOS Apple Silicon ARM64
           - os: macos-latest
             platform: macos
@@ -42,12 +42,16 @@ jobs:
             asset_name: Application-macos-arm64
 
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+        shell: bash
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -93,7 +97,7 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME#v}
           echo "Extracting changelog for version $version"
-          
+
           # Extract the changelog section for this version
           if grep -q "## \[$version\]" CHANGELOG.md; then
             # Extract content between this version and the next version heading or links section
@@ -103,7 +107,7 @@ jobs:
             echo "No changelog entry found for version $version, using default message"
             changelog_content="Release $version - See CHANGELOG.md for details"
           fi
-          
+
           # Store in output for use in release step
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog_content" >> $GITHUB_OUTPUT
