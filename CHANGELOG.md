@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Switched from auto-generated release notes to Keep A Changelog format
+- Unified build workflows for all PyInstaller-compatible platforms
+- Added support for macOS builds (Intel x86_64 and Apple Silicon ARM64)
+- Improved release asset naming with platform-specific identifiers
+
+### Fixed
+- Fixed requirements.txt encoding issue (UTF-16 to UTF-8)
 
 ## [1.0.0] - 2024-08-22
 
