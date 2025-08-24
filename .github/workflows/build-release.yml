@@ -49,10 +49,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Copy .env.example to .env
-        run: cp .env.example .env
-        shell: bash
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
