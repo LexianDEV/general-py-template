@@ -15,7 +15,7 @@ It was developed by LexianDEV
 This template includes a powerful configuration system inspired by Laravel. You can:
 
 - Define configuration in Python files (`config/app.py`, `config/database.py`, etc.)
-- Override settings with environment variables or `.env` file
+- Override settings with JSON configuration or environment variables
 - Access configuration using dot notation: `helpers.get_config('app.name')`
 - Modify configuration at runtime for testing
 

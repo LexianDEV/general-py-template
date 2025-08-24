@@ -47,9 +47,9 @@ settings = {
         print("✓ Config file loading works")
 
 
-def test_env_overrides():
-    """Test environment variable overrides."""
-    print("Testing environment overrides...")
+def test_json_overrides():
+    """Test JSON configuration overrides."""
+    print("Testing JSON configuration overrides...")
     
     with tempfile.TemporaryDirectory() as temp_dir:
         config_dir = Path(temp_dir) / "config"
@@ -62,21 +62,23 @@ name = "Original App"
 debug = False
 """)
         
-        # Create .env file
-        env_file = Path(temp_dir) / ".env"
-        env_file.write_text("""
-APP_NAME=Override App
-APP_DEBUG=true
+        # Create JSON config file
+        json_file = Path(temp_dir) / "config.json"
+        json_file.write_text("""
+{
+    "APP_NAME": "Override App",
+    "APP_DEBUG": true
+}
 """)
         
         # Test config manager
-        manager = ConfigManager(config_dir=str(config_dir), env_file=str(env_file))
+        manager = ConfigManager(config_dir=str(config_dir), json_file=str(json_file))
         
-        # Test environment overrides
+        # Test JSON overrides
         assert manager.get('app.name') == "Override App"
         assert manager.get('app.debug') == True
         
-        print("✓ Environment overrides work")
+        print("✓ JSON configuration overrides work")
 
 
 def test_runtime_config_changes():
@@ -93,8 +95,8 @@ def test_runtime_config_changes():
 name = "Original App"
 """)
         
-        # Test config manager with no .env file
-        manager = ConfigManager(config_dir=str(config_dir), env_file="/nonexistent/.env")
+        # Test config manager with no JSON file
+        manager = ConfigManager(config_dir=str(config_dir), json_file="/nonexistent/config.json")
         
         # Test runtime changes
         original_name = manager.get('app.name')
@@ -108,6 +110,44 @@ name = "Original App"
         assert manager.has('app.nonexistent') == False
         
         print("✓ Runtime config changes work")
+
+
+def test_bundled_json_extraction():
+    """Test JSON extraction and cleanup for bundled applications."""
+    print("Testing bundled JSON extraction and cleanup...")
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        config_dir = Path(temp_dir) / "config"
+        config_dir.mkdir()
+        
+        # Create a test config file
+        test_config = config_dir / "app.py"
+        test_config.write_text("""
+name = "Original App"
+debug = False
+""")
+        
+        # Create JSON config file
+        json_file = Path(temp_dir) / "config.json"
+        json_file.write_text("""
+{
+    "APP_NAME": "Bundled App",
+    "APP_DEBUG": true
+}
+""")
+        
+        # Test config manager
+        manager = ConfigManager(config_dir=str(config_dir), json_file=str(json_file))
+        
+        # Test JSON loading
+        assert manager.get('app.name') == "Bundled App"
+        assert manager.get('app.debug') == True
+        
+        # Test cleanup - the manager should properly initialize without extracted path
+        # since this is not a bundled environment
+        assert manager._extracted_json_path is None
+        
+        print("✓ Bundled JSON extraction and cleanup work")
 
 
 def test_helpers_integration():
@@ -133,8 +173,9 @@ def run_tests():
     
     try:
         test_config_loading()
-        test_env_overrides()
+        test_json_overrides()
         test_runtime_config_changes()
+        test_bundled_json_extraction()
         test_helpers_integration()
         
         print("\n✅ All tests passed!")

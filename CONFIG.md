@@ -5,7 +5,8 @@ This Python template includes a Laravel-inspired configuration system that allow
 ## Features
 
 - **Multiple Config Files**: Organize your configuration into separate Python files (e.g., `app.py`)
-- **Environment Overrides**: Use `.env` file or environment variables to override config values
+- **JSON Configuration**: Use `config.json` file for non-sensitive settings that get bundled into the application
+- **Environment Overrides**: Use environment variables to override config values
 - **Dot Notation Access**: Access nested configuration using dot notation (e.g., `app.name`, `app.logging.level`)
 - **Runtime Changes**: Modify configuration values at runtime for testing or dynamic behavior
 - **Helper Functions**: Easy-to-use helper functions for common config operations
@@ -30,21 +31,43 @@ if helpers.has_config('app.name'):
 all_app_config = helpers.get_all_config('app')
 ```
 
+### JSON Configuration Overrides
+
+JSON configuration takes precedence over config files but environment variables still override everything. The `config.json` file is bundled into the application when built and contains non-sensitive settings:
+
+- `app.name` → `APP_NAME` in JSON
+- `app.response_number` → `APP_RESPONSE_NUMBER` in JSON  
+- `app.logging.level` → `APP_LOGGING_LEVEL` in JSON
+
+Example `config.json` file:
+```json
+{
+  "APP_NAME": "My Custom App",
+  "APP_ENV": "development", 
+  "APP_DEBUG": true,
+  "APP_RESPONSE_NUMBER": 100,
+  "APP_MESSAGE": "Hello from the environment!",
+  "APP_LOGGING_LEVEL": "DEBUG"
+}
+```
+
 ### Environment Variable Overrides
 
-Environment variables take precedence over config files. Use uppercase and underscores:
+Environment variables take highest precedence over both JSON config and config files. Use uppercase and underscores:
 
 - `app.name` → `APP_NAME`
 - `app.response_number` → `APP_RESPONSE_NUMBER`
 - `app.logging.level` → `APP_LOGGING_LEVEL`
 
-Example `.env` file:
+Example environment variables:
 ```bash
-APP_NAME=My Custom App
-APP_DEBUG=true
-APP_RESPONSE_NUMBER=100
-APP_MESSAGE=Hello from the environment!
+export APP_NAME="My Custom App"
+export APP_DEBUG=true
+export APP_RESPONSE_NUMBER=100
+export APP_MESSAGE="Hello from the environment!"
 ```
+
+**Note:** The bundled `config.json` file provides application defaults and is automatically extracted and cleaned up when the application runs. Environment variables can still be used to override any setting at runtime.
 
 ### Runtime Configuration Changes
 
@@ -94,7 +117,7 @@ cache = {
 from config_manager import ConfigManager
 
 # Create a custom config manager
-config = ConfigManager(config_dir="custom_config", env_file="custom.env")
+config = ConfigManager(config_dir="custom_config", json_file="custom_config.json")
 
 # Use the manager directly
 value = config.get('custom.setting', 'default')
@@ -112,10 +135,13 @@ value = helpers.env('app.name')  # Falls back to config if no env var
 ## Best Practices
 
 1. **Organize by Feature**: Create separate config files for different aspects (database, mail, cache, etc.)
-2. **Use Environment Variables**: For sensitive data and environment-specific settings
-3. **Provide Defaults**: Always provide sensible default values
-4. **Document Settings**: Add comments to explain complex configuration options
-5. **Validate Config**: Add validation for critical configuration values in your application startup
+2. **Use JSON for Non-Sensitive Defaults**: Store application defaults in `config.json` that get bundled with the application
+3. **Use Environment Variables**: For sensitive data and environment-specific settings
+4. **Provide Defaults**: Always provide sensible default values
+5. **Document Settings**: Add comments to explain complex configuration options
+6. **Validate Config**: Add validation for critical configuration values in your application startup
+
+**Security Note**: The `config.json` file is bundled into the application and can be viewed by anyone with access to the built executable. Only store non-sensitive configuration in this file. Use environment variables for sensitive data like API keys, passwords, and secrets.
 
 ## Example: Full Configuration Workflow
 

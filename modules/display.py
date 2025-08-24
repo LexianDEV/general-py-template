@@ -24,7 +24,7 @@ class DisplayModule:
         """Display application information."""
         # Get basic app configuration
         app_name = helpers.get_config('app.name', 'Unknown App')
-        app_version = helpers.get_config('app.version', '0.0.0')
+        app_version = helpers.get_config('app.version', '1.0.0')
         app_env = helpers.get_config('app.env', 'unknown')
         app_debug = helpers.get_config('app.debug', False)
         
