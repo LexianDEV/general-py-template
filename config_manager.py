@@ -4,32 +4,67 @@ Supports loading config files from the config directory and environment override
 """
 
 import os
+import sys
+import json
 import importlib.util
 from typing import Any, Dict, Optional
 from pathlib import Path
+import tempfile
+import shutil
 
 
 class ConfigManager:
     """Manages application configuration with support for multiple config files and environment overrides."""
     
-    def __init__(self, config_dir: str = "config", env_file: str = ".env"):
+    def __init__(self, config_dir: str = "config", json_file: str = "config.json"):
         self.config_dir = Path(config_dir)
-        self.env_file = Path(env_file)
+        self.json_file = Path(json_file)
         self._config_cache: Dict[str, Dict[str, Any]] = {}
-        self._env_vars: Dict[str, str] = {}
+        self._json_vars: Dict[str, Any] = {}
+        self._extracted_json_path: Optional[Path] = None
         
-        # Load environment variables from .env file
-        self._load_env_file()
+        # Load configuration from JSON file
+        self._load_json_file()
         
-    def _load_env_file(self) -> None:
-        """Load environment variables from .env file if it exists."""
-        if self.env_file.exists():
-            with open(self.env_file, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        key, value = line.split('=', 1)
-                        self._env_vars[key.strip()] = value.strip().strip('"').strip("'")
+    def _load_json_file(self) -> None:
+        """Load configuration from JSON file. If bundled, extract it temporarily."""
+        json_path = self.json_file
+        
+        # Check if this is a bundled application (PyInstaller)
+        if hasattr(sys, '_MEIPASS'):
+            # Extract JSON from bundled resources to a temporary location
+            bundled_json = Path(sys._MEIPASS) / self.json_file.name
+            if bundled_json.exists():
+                # Create a temporary file
+                temp_fd, temp_path = tempfile.mkstemp(suffix='.json')
+                os.close(temp_fd)
+                
+                # Copy the bundled JSON to temp location
+                shutil.copy2(bundled_json, temp_path)
+                json_path = Path(temp_path)
+                self._extracted_json_path = json_path
+        
+        # Load the JSON file if it exists
+        if json_path.exists():
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    self._json_vars = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not load JSON config file {json_path}: {e}")
+                self._json_vars = {}
+    
+    def __del__(self):
+        """Clean up extracted JSON file when the ConfigManager is destroyed."""
+        self._cleanup_extracted_json()
+    
+    def _cleanup_extracted_json(self) -> None:
+        """Delete the extracted JSON file if it exists."""
+        if hasattr(self, '_extracted_json_path') and self._extracted_json_path and self._extracted_json_path.exists():
+            try:
+                self._extracted_json_path.unlink()
+                self._extracted_json_path = None
+            except OSError:
+                pass  # Ignore cleanup errors
     
     def _load_config_file(self, config_name: str) -> Dict[str, Any]:
         """Load a specific config file."""
@@ -56,24 +91,23 @@ class ConfigManager:
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get a configuration value using dot notation (e.g., 'app.name' or 'database.host').
-        Environment variables take precedence over config files.
+        JSON configuration takes precedence over config files.
+        Environment variables take precedence over everything.
         """
-        # Check for environment variable override first
+        # Check for environment variable override first (highest priority)
         env_key = key.upper().replace('.', '_')
-        if env_key in self._env_vars:
-            value = self._env_vars[env_key]
-            # Convert string boolean values
-            if value.lower() in ('true', 'false'):
-                return value.lower() == 'true'
-            return value
         if env_key in os.environ:
             value = os.environ[env_key]
             # Convert string boolean values
             if value.lower() in ('true', 'false'):
                 return value.lower() == 'true'
             return value
+        
+        # Check for JSON config override (second priority)
+        if env_key in self._json_vars:
+            return self._json_vars[env_key]
             
-        # Parse the key to get config file and setting
+        # Parse the key to get config file and setting (lowest priority)
         if '.' not in key:
             return default
             
@@ -124,7 +158,9 @@ class ConfigManager:
                 del self._config_cache[config_name]
         else:
             self._config_cache.clear()
-            self._load_env_file()
+            # Clean up old extracted JSON and reload
+            self._cleanup_extracted_json()
+            self._load_json_file()
     
     def all(self, config_name: str) -> Dict[str, Any]:
         """Get all configuration values for a specific config file."""
