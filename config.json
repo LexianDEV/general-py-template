@@ -1,6 +1,7 @@
 {
   "APP_NAME": "My Custom App",
-  "APP_ENV": "development", 
+  "APP_VERSION": "1.0.0",
+  "APP_ENV": "development",
   "APP_DEBUG": true,
   "APP_RESPONSE_NUMBER": 100,
   "APP_MESSAGE": "Hello from the environment!",
