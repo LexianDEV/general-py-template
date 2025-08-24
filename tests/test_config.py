@@ -47,9 +47,9 @@ settings = {
         print("✓ Config file loading works")
 
 
-def test_settings_overrides():
-    """Test settings file overrides."""
-    print("Testing settings overrides...")
+def test_env_overrides():
+    """Test environment variable overrides."""
+    print("Testing environment overrides...")
     
     with tempfile.TemporaryDirectory() as temp_dir:
         config_dir = Path(temp_dir) / "config"
@@ -62,21 +62,21 @@ name = "Original App"
 debug = False
 """)
         
-        # Create settings file
-        settings_file = config_dir / "settings.py"
-        settings_file.write_text("""
-APP_NAME = "Override App"
-APP_DEBUG = True
+        # Create .env file
+        env_file = Path(temp_dir) / ".env"
+        env_file.write_text("""
+APP_NAME=Override App
+APP_DEBUG=true
 """)
         
         # Test config manager
-        manager = ConfigManager(config_dir=str(config_dir), settings_file="settings")
+        manager = ConfigManager(config_dir=str(config_dir), env_file=str(env_file))
         
-        # Test settings overrides
+        # Test environment overrides
         assert manager.get('app.name') == "Override App"
         assert manager.get('app.debug') == True
         
-        print("✓ Settings overrides work")
+        print("✓ Environment overrides work")
 
 
 def test_runtime_config_changes():
@@ -93,8 +93,8 @@ def test_runtime_config_changes():
 name = "Original App"
 """)
         
-        # Test config manager with no settings file
-        manager = ConfigManager(config_dir=str(config_dir), settings_file="nonexistent")
+        # Test config manager with no .env file
+        manager = ConfigManager(config_dir=str(config_dir), env_file="/nonexistent/.env")
         
         # Test runtime changes
         original_name = manager.get('app.name')
@@ -133,7 +133,7 @@ def run_tests():
     
     try:
         test_config_loading()
-        test_settings_overrides()
+        test_env_overrides()
         test_runtime_config_changes()
         test_helpers_integration()
         

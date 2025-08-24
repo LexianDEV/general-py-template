@@ -1,6 +1,6 @@
 """
 Laravel-like configuration manager for Python applications.
-Supports loading config files from the config directory and settings overrides.
+Supports loading config files from the config directory and environment overrides.
 """
 
 import os
@@ -10,35 +10,26 @@ from pathlib import Path
 
 
 class ConfigManager:
-    """Manages application configuration with support for multiple config files and settings overrides."""
+    """Manages application configuration with support for multiple config files and environment overrides."""
     
-    def __init__(self, config_dir: str = "config", settings_file: str = "settings"):
+    def __init__(self, config_dir: str = "config", env_file: str = ".env"):
         self.config_dir = Path(config_dir)
-        self.settings_file = settings_file
+        self.env_file = Path(env_file)
         self._config_cache: Dict[str, Dict[str, Any]] = {}
-        self._settings_vars: Dict[str, str] = {}
+        self._env_vars: Dict[str, str] = {}
         
-        # Load settings variables from settings file
-        self._load_settings_file()
+        # Load environment variables from .env file
+        self._load_env_file()
         
-    def _load_settings_file(self) -> None:
-        """Load settings variables from settings.py file if it exists."""
-        settings_file_path = self.config_dir / f"{self.settings_file}.py"
-        if settings_file_path.exists():
-            # Load the settings file as a module
-            spec = importlib.util.spec_from_file_location(self.settings_file, settings_file_path)
-            if spec is None or spec.loader is None:
-                return
-                
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Extract all non-private attributes as settings values
-            for attr_name in dir(module):
-                if not attr_name.startswith('_') and not callable(getattr(module, attr_name)):
-                    value = getattr(module, attr_name)
-                    # Store as string for consistency with old env behavior
-                    self._settings_vars[attr_name] = str(value)
+    def _load_env_file(self) -> None:
+        """Load environment variables from .env file if it exists."""
+        if self.env_file.exists():
+            with open(self.env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        self._env_vars[key.strip()] = value.strip().strip('"').strip("'")
     
     def _load_config_file(self, config_name: str) -> Dict[str, Any]:
         """Load a specific config file."""
@@ -65,28 +56,21 @@ class ConfigManager:
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get a configuration value using dot notation (e.g., 'app.name' or 'database.host').
-        Environment variables have highest precedence, then settings variables, then config files.
+        Environment variables take precedence over config files.
         """
-        # Check for environment variable override first (highest precedence)
+        # Check for environment variable override first
         env_key = key.upper().replace('.', '_')
+        if env_key in self._env_vars:
+            value = self._env_vars[env_key]
+            # Convert string boolean values
+            if value.lower() in ('true', 'false'):
+                return value.lower() == 'true'
+            return value
         if env_key in os.environ:
             value = os.environ[env_key]
             # Convert string boolean values
             if value.lower() in ('true', 'false'):
                 return value.lower() == 'true'
-            return value
-        
-        # Check for settings variable override second
-        if env_key in self._settings_vars:
-            value = self._settings_vars[env_key]
-            # Convert string boolean values
-            if value.lower() in ('true', 'false'):
-                return value.lower() == 'true'
-            # Try to convert to int if it looks like a number
-            try:
-                return int(value)
-            except ValueError:
-                pass
             return value
             
         # Parse the key to get config file and setting
@@ -140,7 +124,7 @@ class ConfigManager:
                 del self._config_cache[config_name]
         else:
             self._config_cache.clear()
-            self._load_settings_file()
+            self._load_env_file()
     
     def all(self, config_name: str) -> Dict[str, Any]:
         """Get all configuration values for a specific config file."""
