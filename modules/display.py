@@ -1,9 +1,9 @@
 """
 Display module for managing application output and presentation.
-Handles all display-related functionality with async support.
+Handles all display-related functionality.
 """
 
-import asyncio
+import time
 import helpers
 
 
@@ -14,13 +14,13 @@ class DisplayModule:
         """Initialize the display module."""
         pass
     
-    async def show_header(self):
+    def show_header(self):
         """Display the application header."""
         print("=== General Python Template ===")
         print(f"Current time: {helpers.time()}")
         print()
     
-    async def show_app_info(self):
+    def show_app_info(self):
         """Display application information."""
         # Get basic app configuration
         app_name = helpers.get_config('app.name', 'Unknown App')
@@ -32,7 +32,7 @@ class DisplayModule:
         print(f"Environment: {app_env} (Debug: {app_debug})")
         print()
     
-    async def show_app_response(self):
+    def show_app_response(self):
         """Display the application response section."""
         response_number = helpers.get_config('app.response_number', 0)
         message = helpers.get_config('app.message', 'Hello, World!')
@@ -42,7 +42,7 @@ class DisplayModule:
         print(f"Response Number: {response_number}")
         print()
     
-    async def show_config_source(self):
+    def show_config_source(self):
         """Display configuration source information."""
         response_number = helpers.get_config('app.response_number', 0)
         message = helpers.get_config('app.message', 'Hello, World!')
@@ -63,25 +63,25 @@ class DisplayModule:
         else:
             print(f"Message is from config file: {message}")
     
-    async def show_all(self):
+    def show_all(self):
         """Display all application information sections."""
-        await self.show_header()
-        await self.show_app_info()
-        await self.show_app_response()
-        await self.show_config_source()
+        self.show_header()
+        self.show_app_info()
+        self.show_app_response()
+        self.show_config_source()
     
-    async def show_with_delay(self, delay_seconds: float = 0.1):
+    def show_with_delay(self, delay_seconds: float = 0.1):
         """
-        Example of async functionality - show all sections with small delays.
-        This demonstrates the async foundation in action.
+        Example of delayed functionality - show all sections with small delays.
+        This demonstrates functionality with timing control.
         """
-        await self.show_header()
-        await asyncio.sleep(delay_seconds)
+        self.show_header()
+        time.sleep(delay_seconds)
         
-        await self.show_app_info()
-        await asyncio.sleep(delay_seconds)
+        self.show_app_info()
+        time.sleep(delay_seconds)
         
-        await self.show_app_response()
-        await asyncio.sleep(delay_seconds)
+        self.show_app_response()
+        time.sleep(delay_seconds)
         
-        await self.show_config_source()
+        self.show_config_source()
